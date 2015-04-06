@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "coffee test/test.coffee"
+    "test": "coffee test/test.coffee && rm out.json"
   },
   "author": "",
   "license": "ISC",
