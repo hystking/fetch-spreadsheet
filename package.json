@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "coffee -c index.coffee",
     "test": "coffee test.coffee && rm out.json"
   },
   "author": "",
