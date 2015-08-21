@@ -1,39 +1,48 @@
 _ = require "lodash"
 async = require "async"
-fs = require "fs"
 GoogleSpreadsheet = require "google-spreadsheet"
 
-getSheetInfo = (sheetId, auth, callback) ->
+_getSheetInfo = (sheetId, creds, callback) ->
   sheet = new GoogleSpreadsheet sheetId
-  if auth
+  if creds
     async.waterfall [
       (cb) ->
-        sheet.setAuth auth.username, auth.pass, cb
-      (auth, cb) ->
+        sheet.useServiceAccountAuth creds, cb
+      (cb) ->
         sheet.getInfo cb
     ], callback
   else
     sheet.getInfo callback
 
-fetchAndSave = (sheetInfo, title, dest, transform, callback) ->
+_fetchSpreadsheet = (sheetInfo, title, transform, callback) ->
   sheets = _.filter sheetInfo.worksheets, title: title
   async.map sheets, (sheet, cb) ->
     sheet.getRows cb
   , (err, datas) ->
     datas = _.map datas, transform
     if sheets.length is 1
-      output = datas[0]
+      datas[0]
     else
-      output = datas
-    fs.writeFile dest, (JSON.stringify output, null, "  "), callback
+      datas
 
-module.exports = ({sheetId, auth, infos, callback}) ->
-  infos = _.flatten [infos], true
+#
+# sheetId: スプレッドシートのID
+# creds: 認証情報（任意）、Googleからもらってくる
+# opts: [
+#   {
+#     title: シート名
+#     transform: 列ごとの変形
+#   }
+# ]
+#
+
+module.exports = ({sheetId, creds, opts, callback}) ->
+  opts = _.flatten [opts], true
   async.waterfall [
     (cb) ->
-      getSheetInfo sheetId, auth, cb
+      _getSheetInfo sheetId, creds, cb
     (sheetInfo, cb) ->
-      async.map (_.map infos), (info, cb) ->
-        fetchAndSave sheetInfo, info.title, info.dest, info.transform, cb
+      async.map (_.map opts), (opt, cb) ->
+        _fetchSpreadsheet sheetInfo, opt.title, opt.transform, cb
       , cb
   ], callback
